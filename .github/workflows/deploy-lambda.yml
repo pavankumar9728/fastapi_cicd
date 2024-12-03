@@ -33,10 +33,11 @@ jobs:
         zip -g deployment.zip main.py
 
     - name: Deploy to AWS Lambda
-      uses: aws-actions/aws-lambda-deploy@v1
+      uses: aws-actions/aws-lambda-action@v1  # Correct action to deploy to AWS Lambda
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
         function-name: fastapi-onboarding  # Replace with your Lambda function name
-        zip-file: deployment.zip
+        zip-file: deployment.zip   # Path to the ZIP file containing your code and dependencies
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
