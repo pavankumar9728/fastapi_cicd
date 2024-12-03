@@ -2,7 +2,7 @@ name: Deploy Lambda Function with API Gateway
 
 on:
   push:
-    branches: [main]  # Trigger the workflow on pushes to the main 
+    branches: [main]  # Trigger the workflow on pushes to the main branch
 
 jobs:
   deploy:
