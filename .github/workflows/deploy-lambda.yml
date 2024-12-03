@@ -21,10 +21,9 @@ jobs:
       - name: Deploy Lambda function
         uses: imehedi/actions-awscli-v2@latest
         with:
-          args: |
-            lambda update-function-code \
+          args: "lambda update-function-code \
             --function-name arn:aws:lambda:ap-south-1:899920141210:function:fastapi-onboarding \
-            --zip-file fileb://code.zip
+            --zip-file fileb://code.zip"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -32,10 +31,10 @@ jobs:
 
       - name: Create or update API Gateway
         run: |
-          # Create or update the API Gateway
+          # Creating or updating the API Gateway
           aws apigateway create-rest-api --name 'FastAPI-Onboarding-API' --region ${{ secrets.AWS_REGION }} || echo "API already exists"
 
-          # Fetch the REST API ID and root resource ID
+          # Fetch the REST API ID and root resource ID (You can also use AWS SDK or CLI to query these)
           API_ID=$(aws apigateway get-rest-apis --query "items[?name=='FastAPI-Onboarding-API'].id" --output text)
           ROOT_RESOURCE_ID=$(aws apigateway get-resources --rest-api-id $API_ID --query "items[0].id" --output text)
 
@@ -43,29 +42,11 @@ jobs:
           aws apigateway put-method --rest-api-id $API_ID --resource-id $ROOT_RESOURCE_ID --http-method POST --authorization-type NONE --region ${{ secrets.AWS_REGION }}
 
           # Integrate Lambda with the POST method
-          aws apigateway put-integration \
-            --rest-api-id $API_ID \
-            --resource-id $ROOT_RESOURCE_ID \
-            --http-method POST \
-            --integration-http-method POST \
-            --type AWS_PROXY \
-            --uri arn:aws:apigateway:${{ secrets.AWS_REGION }}:lambda:path/2015-03-31/functions/arn:aws:lambda:${{ secrets.AWS_REGION }}:899920141210:function:fastapi-onboarding/invocations \
-            --region ${{ secrets.AWS_REGION }}
+          aws apigateway put-integration --rest-api-id $API_ID --resource-id $ROOT_RESOURCE_ID --http-method POST --integration-http-method POST --type AWS_PROXY --uri arn:aws:apigateway:${{ secrets.AWS_REGION }}:lambda:path/2015-03-31/functions/arn:aws:lambda:${{ secrets.AWS_REGION }}:899920141210:function:fastapi-onboarding/invocations --region ${{ secrets.AWS_REGION }}
 
-          # Deploy the API to a stage
+          # Deploy the API to a stage (you can name the stage as you prefer)
           aws apigateway create-deployment --rest-api-id $API_ID --stage-name prod --region ${{ secrets.AWS_REGION }}
 
-          # Generate the correct source ARN dynamically
-          STAGE_NAME="prod"
-          SOURCE_ARN="arn:aws:execute-api:${{ secrets.AWS_REGION }}:899920141210:${API_ID}/${STAGE_NAME}/POST/*"
-
-          # Grant API Gateway permission to invoke Lambda
-          aws lambda add-permission \
-            --function-name fastapi-onboarding \
-            --statement-id "apigateway-invoke-$(date +%s)" \
-            --action lambda:InvokeFunction \
-            --principal apigateway.amazonaws.com \
-            --source-arn "$SOURCE_ARN"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
